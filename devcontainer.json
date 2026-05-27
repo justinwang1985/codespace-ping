@@ -1,0 +1,14 @@
+{
+  "name": "codespace-ping",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "forwardPorts": [3737],
+  "portsAttributes": {
+    "3737": {
+      "label": "codespace-ping notifier",
+      "onAutoForward": "notify",
+      "visibility": "private"
+    }
+  },
+  "postCreateCommand": "chmod +x bin/ping-done && echo 'export PATH=\"$PATH:'\"$(pwd)\"'/bin\"' >> ~/.bashrc",
+  "postStartCommand": "nohup node server.js > /tmp/codespace-ping.log 2>&1 &"
+}

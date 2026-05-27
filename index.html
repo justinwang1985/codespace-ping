@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>codespace-ping</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🔔%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <div class="status">
+        <span class="dot" id="dot"></span>
+        <span id="status-text">connecting…</span>
+      </div>
+      <h1>codespace-ping</h1>
+      <p class="sub">Keep this tab open. You'll get a sound + notification when your code finishes.</p>
+    </header>
+
+    <section class="card" id="activate-card" hidden>
+      <h2>One-time setup</h2>
+      <p>Browsers block audio until you interact with the page. Click below to activate sound for this session.</p>
+      <button id="activate-btn" class="primary">Activate sound &amp; notifications</button>
+    </section>
+
+    <section class="card">
+      <h2>Settings</h2>
+      <div class="row">
+        <label for="sound-success">Success sound</label>
+        <select id="sound-success"></select>
+        <button data-test="success" class="ghost">▶</button>
+      </div>
+      <div class="row">
+        <label for="sound-error">Error sound</label>
+        <select id="sound-error"></select>
+        <button data-test="error" class="ghost">▶</button>
+      </div>
+      <div class="row">
+        <label for="volume">Volume</label>
+        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.7" />
+        <span id="volume-display">70%</span>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="show-notif" checked /> Show browser notification</label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Recent pings <span id="count" class="count">0</span></h2>
+      <ul id="log" class="log"><li class="empty">Nothing yet. Try <code>ping-done</code> from your terminal.</li></ul>
+    </section>
+
+    <footer>
+      <details>
+        <summary>How to use</summary>
+        <pre><code># Run a command and ping when it finishes
+ping-done npm test
+
+# Ping with no command (manual signal)
+ping-done "deploy finished"
+
+# Chain after any command
+long-running-thing; ping-done</code></pre>
+      </details>
+    </footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# ping-done — notify your browser tab when a command finishes
+#
+# Usage:
+#   ping-done                    # just send a "Done" ping
+#   ping-done "custom message"   # send a custom message
+#   ping-done npm test           # run command, ping with success/failure
+#   long_thing; ping-done        # chain after any command
+
+set -u
+
+PORT="${PING_DONE_PORT:-3737}"
+HOST="${PING_DONE_HOST:-localhost}"
+URL="http://${HOST}:${PORT}/notify"
+
+post() {
+  local message="$1"
+  local status="$2"
+  local safe
+  safe=$(printf '%s' "$message" | tr -d '"\\' | tr '\n' ' ')
+  curl -fsS -m 2 -X POST "$URL" \
+    -H "Content-Type: application/json" \
+    -d "{\"message\":\"${safe}\",\"status\":\"${status}\"}" \
+    > /dev/null 2>&1 || {
+      echo "ping-done: could not reach notifier at $URL" >&2
+      echo "ping-done: is the server running? (npm start in the codespace-ping repo)" >&2
+    }
+}
+
+if [ $# -eq 0 ]; then
+  post "Done" "success"
+  exit 0
+fi
+
+# If single arg that isn't an executable, treat as a message
+if [ $# -eq 1 ] && ! command -v "$1" >/dev/null 2>&1; then
+  post "$1" "success"
+  exit 0
+fi
+
+# Otherwise treat args as a command to run
+START=$(date +%s)
+"$@"
+EXIT_CODE=$?
+END=$(date +%s)
+DURATION=$((END - START))
+
+if [ $DURATION -lt 60 ]; then
+  DUR="${DURATION}s"
+elif [ $DURATION -lt 3600 ]; then
+  DUR="$((DURATION / 60))m $((DURATION % 60))s"
+else
+  DUR="$((DURATION / 3600))h $((DURATION % 3600 / 60))m"
+fi
+
+CMD="$*"
+if [ $EXIT_CODE -eq 0 ]; then
+  post "${CMD} (${DUR})" "success"
+else
+  post "${CMD} failed with exit ${EXIT_CODE} (${DUR})" "error"
+fi
+
+exit $EXIT_CODE

@@ -1,0 +1,18 @@
+{
+  "name": "codespace-ping",
+  "version": "0.1.0",
+  "description": "Audio + browser notifications when long-running commands finish in GitHub Codespaces.",
+  "main": "server.js",
+  "bin": {
+    "ping-done": "./bin/ping-done"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["codespaces", "notification", "cli", "developer-tools"],
+  "license": "MIT"
+}
