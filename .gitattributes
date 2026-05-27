@@ -1,0 +1,2 @@
+*.sh text eol=lf
+bin/ping-done text eol=lf
