@@ -2,3 +2,4 @@
 bin/ping-done text eol=lf
 bin/ping-server text eol=lf
 install.sh text eol=lf
+*.md text eol=lf
