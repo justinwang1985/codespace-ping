@@ -10,7 +10,6 @@
 
 set -u
 
-# Resolve the install directory (where server.js lives)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$(dirname "$SCRIPT_DIR")"
 SERVER="$INSTALL_DIR/server.js"
@@ -26,11 +25,12 @@ cmd_start() {
     echo "  Already running (PID $(pgrep -f "node $SERVER"))"
     return 0
   fi
-  nohup node "$SERVER" > "$LOG" 2>&1 &
-  disown
+  # setsid creates a new session so the process survives parent shell exit.
+  # nohup ignores SIGHUP, </dev/null detaches stdin. Combined, the process
+  # is fully orphaned and survives postStartCommand teardown in Codespaces.
+  setsid nohup node "$SERVER" > "$LOG" 2>&1 < /dev/null &
   sleep 0.5
 
-  # Verify it actually came up
   for i in 1 2 3 4 5; do
     if curl -fsS "http://localhost:$PORT/api/status" > /dev/null 2>&1; then
       echo "  Started on port $PORT (PID $(pgrep -f "node $SERVER"))"
