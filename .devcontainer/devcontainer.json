@@ -5,10 +5,10 @@
   "portsAttributes": {
     "3737": {
       "label": "codespace-ping notifier",
-      "onAutoForward": "notify",
+      "onAutoForward": "openPreview",
       "visibility": "private"
     }
   },
-  "postCreateCommand": "chmod +x bin/ping-done && echo 'export PATH=\"$PATH:'\"$(pwd)\"'/bin\"' >> ~/.bashrc",
-  "postStartCommand": "nohup node server.js > /tmp/codespace-ping.log 2>&1 &"
+  "postCreateCommand": "chmod +x bin/ping-done bin/ping-server && echo 'export PATH=\"$PATH:'\"$(pwd)\"'/bin\"' >> ~/.bashrc",
+  "postStartCommand": "bash bin/ping-server start"
 }

@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# ping-server ? manage the codespace-ping notifier server
+#
+# Usage:
+#   ping-server start      # start in background if not running
+#   ping-server stop       # stop the running server
+#   ping-server restart    # stop then start
+#   ping-server status     # is it running? on what port?
+#   ping-server logs       # tail the log
+
+set -u
+
+# Resolve the install directory (where server.js lives)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_DIR="$(dirname "$SCRIPT_DIR")"
+SERVER="$INSTALL_DIR/server.js"
+LOG="/tmp/codespace-ping.log"
+PORT="${PING_DONE_PORT:-3737}"
+
+is_running() {
+  pgrep -f "node $SERVER" > /dev/null 2>&1
+}
+
+cmd_start() {
+  if is_running; then
+    echo "  Already running (PID $(pgrep -f "node $SERVER"))"
+    return 0
+  fi
+  nohup node "$SERVER" > "$LOG" 2>&1 &
+  disown
+  sleep 0.5
+
+  # Verify it actually came up
+  for i in 1 2 3 4 5; do
+    if curl -fsS "http://localhost:$PORT/api/status" > /dev/null 2>&1; then
+      echo "  Started on port $PORT (PID $(pgrep -f "node $SERVER"))"
+      return 0
+    fi
+    sleep 0.5
+  done
+
+  echo "  ? Server did not respond on port $PORT ? check $LOG"
+  return 1
+}
+
+cmd_stop() {
+  if ! is_running; then
+    echo "  Not running"
+    return 0
+  fi
+  pkill -f "node $SERVER" 2>/dev/null
+  sleep 0.3
+  echo "  Stopped"
+}
+
+cmd_status() {
+  if is_running; then
+    PID=$(pgrep -f "node $SERVER")
+    STATUS=$(curl -fsS "http://localhost:$PORT/api/status" 2>/dev/null)
+    echo "  Running (PID $PID)"
+    [ -n "$STATUS" ] && echo "  $STATUS"
+  else
+    echo "  Not running"
+  fi
+}
+
+cmd_logs() {
+  if [ ! -f "$LOG" ]; then
+    echo "  No log at $LOG yet"
+    return 1
+  fi
+  tail -f "$LOG"
+}
+
+case "${1:-status}" in
+  start)   cmd_start ;;
+  stop)    cmd_stop ;;
+  restart) cmd_stop; cmd_start ;;
+  status)  cmd_status ;;
+  logs)    cmd_logs ;;
+  *)
+    echo "Usage: ping-server {start|stop|restart|status|logs}"
+    exit 1
+    ;;
+esac
