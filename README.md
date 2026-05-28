@@ -13,6 +13,18 @@ curl -fsSL https://raw.githubusercontent.com/justinwang1985/codespace-ping/main/
 source ~/.bashrc
 ```
 
+The installer asks whether to also configure Claude Code hooks (recommended if you use Claude Code in the codespace — it makes Claude play a sound when it finishes a turn or needs your input).
+
+To skip the prompt, set the choice up front:
+
+```bash
+# Auto-accept Claude hooks
+CODESPACE_PING_CLAUDE=yes curl -fsSL https://raw.githubusercontent.com/justinwang1985/codespace-ping/main/install.sh | bash
+
+# Skip Claude hooks
+CODESPACE_PING_CLAUDE=no  curl -fsSL https://raw.githubusercontent.com/justinwang1985/codespace-ping/main/install.sh | bash
+```
+
 Then in VS Code, open the **Ports** tab (bottom panel), find port `3737`, and click the **🌐 globe icon** to open the listener in your real browser. (Not VS Code's Simple Browser — audio won't play there.) On the page that opens:
 
 1. Click **Activate sound & notifications**
@@ -75,50 +87,18 @@ ping-server logs       # tail the log
 
 The installer starts the server. The devcontainer auto-starts it in fresh codespaces created from this repo. You generally won't need these — they're for when something seems off.
 
-## Use with Claude Code
+## Claude Code integration
 
-If you use Claude Code in your codespace, hooks can fire `ping-done` automatically when Claude finishes a turn or needs your input. Run this in the codespace:
-
-```bash
-mkdir -p ~/.claude
-cat > ~/.claude/settings.json << 'EOF'
-{
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s -m 2 -X POST http://localhost:${PING_DONE_PORT:-3737}/notify -H 'Content-Type: application/json' -d '{\"message\":\"Claude finished\",\"status\":\"success\"}' > /dev/null 2>&1"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s -m 2 -X POST http://localhost:${PING_DONE_PORT:-3737}/notify -H 'Content-Type: application/json' -d '{\"message\":\"Claude needs you\",\"status\":\"error\"}' > /dev/null 2>&1"
-          }
-        ]
-      }
-    ]
-  }
-}
-EOF
-```
-
-What this gives you:
+If you say **yes** to the prompt during install, two hooks get wired into `~/.claude/settings.json`:
 
 - **Success sound** when Claude finishes a turn (`"Claude finished"` in the log)
-- **Error sound** when Claude is waiting for your input or permission (`"Claude needs you"`)
+- **Error sound** when Claude needs your input or permission (`"Claude needs you"`)
 
-The two distinct sounds let you tell from across the room whether Claude is done or stuck waiting on you.
+The two distinct sounds let you tell from across the room whether Claude is done or stuck waiting on you. Restart Claude Code after install for the hooks to take effect.
 
-Hooks load at session start, so restart Claude Code after adding the config.
+The installer uses `jq` to merge into any existing `~/.claude/settings.json`, so your theme, permission prefs, or other hooks are preserved — only the `hooks` key is touched.
+
+To add or update the hooks later (without reinstalling everything), just re-run the installer.
 
 ## Custom sounds
 
@@ -138,12 +118,12 @@ Once you've used codespace-ping in a couple of codespaces, you'll want it everyw
 2. Add a file `install.sh` containing:
    ```bash
    #!/usr/bin/env bash
-   curl -fsSL https://raw.githubusercontent.com/justinwang1985/codespace-ping/main/install.sh | bash
+   CODESPACE_PING_CLAUDE=yes curl -fsSL https://raw.githubusercontent.com/justinwang1985/codespace-ping/main/install.sh | bash
    ```
 3. Go to `https://github.com/settings/codespaces`
 4. Toggle on **Automatically install dotfiles**
 
-Every new codespace on any repo will have `ping-done` available immediately. No per-codespace setup.
+Every new codespace on any repo will have `ping-done` available immediately, with Claude Code hooks pre-configured. No per-codespace setup, no prompts.
 
 ## Manual install (if you don't want to pipe curl into bash)
 
@@ -164,10 +144,12 @@ bash ~/.codespace-ping/install.sh
 
 ## Configuration
 
-| Env var          | Default     | Purpose                                       |
-| ---------------- | ----------- | --------------------------------------------- |
-| `PING_DONE_PORT` | `3737`      | Port for the notifier server and CLI          |
-| `PING_DONE_HOST` | `localhost` | Host the CLI POSTs to (rarely needs changing) |
+| Env var                 | Default             | Purpose                                              |
+| ----------------------- | ------------------- | ---------------------------------------------------- |
+| `PING_DONE_PORT`        | `3737`              | Port for the notifier server and CLI                 |
+| `PING_DONE_HOST`        | `localhost`         | Host the CLI POSTs to (rarely needs changing)        |
+| `CODESPACE_PING_CLAUDE` | (prompt)            | Set to `yes` or `no` to skip the Claude hook prompt  |
+| `CODESPACE_PING_DIR`    | `~/.codespace-ping` | Where the repo is cloned during install              |
 
 ## API
 
