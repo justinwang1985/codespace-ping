@@ -31,18 +31,21 @@ fi
 
 chmod +x "$INSTALL_DIR/bin/ping-done" "$INSTALL_DIR/bin/ping-server"
 
-# Add bin to PATH on the right shell rc
+# Add bin to PATH and auto-start on shell open
 SHELL_RC="$HOME/.bashrc"
 [ -n "${ZSH_VERSION:-}" ] && SHELL_RC="$HOME/.zshrc"
 
 if ! grep -q "codespace-ping/bin" "$SHELL_RC" 2>/dev/null; then
-  echo "" >> "$SHELL_RC"
-  echo "# codespace-ping" >> "$SHELL_RC"
-  echo "export PATH=\"\$PATH:$INSTALL_DIR/bin\"" >> "$SHELL_RC"
-  echo "  Added $INSTALL_DIR/bin to PATH in $SHELL_RC"
+  {
+    echo ""
+    echo "# codespace-ping"
+    echo "export PATH=\"\$PATH:$INSTALL_DIR/bin\""
+    echo "command -v ping-server >/dev/null 2>&1 && ping-server start >/dev/null 2>&1"
+  } >> "$SHELL_RC"
+  echo "  Added PATH and auto-start to $SHELL_RC"
 fi
 
-# Start the server
+# Start the server now
 "$INSTALL_DIR/bin/ping-server" restart
 
 # --- Claude Code hook setup -----------------------------------------------
